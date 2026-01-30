@@ -26,16 +26,23 @@ class DP_DecayManager
         
         // Get all TerritoryFlag objects using manager instead of world search
         DP_TerritoryManager tm = DP_TerritoryManager.TM_GetInstance();
-        if (!tm || !tm.m_Ownerships)
+        if (!tm)
         {
             Print("[DP_Decay] Territory manager not initialized");
             return;
         }
         
-        int flagsProcessed = 0;
-        for (int i = 0; i < tm.m_Ownerships.Count(); i++)
+        array<ref TM_TerritoryOwnership> ownerships = tm.GetOwnerships();
+        if (!ownerships)
         {
-            TM_TerritoryOwnership ownership = tm.m_Ownerships.Get(i);
+            Print("[DP_Decay] Ownerships array not initialized");
+            return;
+        }
+        
+        int flagsProcessed = 0;
+        for (int i = 0; i < ownerships.Count(); i++)
+        {
+            TM_TerritoryOwnership ownership = ownerships.Get(i);
             if (!ownership || !ownership.flagObj) continue;
             
             TerritoryFlag flag = TerritoryFlag.Cast(ownership.flagObj);
