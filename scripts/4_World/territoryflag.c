@@ -113,7 +113,8 @@ modded class TerritoryFlag
         // Allow alphanumeric, dash, and underscore
         for (int i = 0; i < id.Length(); i++)
         {
-            int charCode = id.Get(i);
+            string char = id.Get(i);
+            int charCode = char.ToAscii(0);
             bool isNumber = (charCode >= 48 && charCode <= 57); // 0-9
             bool isUpperLetter = (charCode >= 65 && charCode <= 90); // A-Z
             bool isLowerLetter = (charCode >= 97 && charCode <= 122); // a-z
