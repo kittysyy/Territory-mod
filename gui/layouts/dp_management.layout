@@ -35,7 +35,7 @@ FrameWidgetClass rootFrame {
        color 1 1 1 1
        text "УПРАВЛЕНИЕ ТЕРРИТОРИЕЙ"
        position 0.02 0
-       size 0.8 1
+       size 0.7 1
        halign left_ref
        valign center_ref
        text_halign left
@@ -45,11 +45,11 @@ FrameWidgetClass rootFrame {
       ButtonWidgetClass ButtonClose {
        color 0.7 0.1 0.1 1
        position -0.01 0
-       size 0.05 0.7
+       size 0.06 0.7
        halign right_ref
        valign center_ref
        style DayZDefaultButton
-       text "✕"
+       text "X"
        font "gui/fonts/etelkatextpro22"
       }
      }
@@ -86,7 +86,7 @@ FrameWidgetClass rootFrame {
          ignorepointer 1
          text "Уровень: 1"
          position -0.02 0
-         size 0.3 1
+         size 0.4 1
          halign right_ref
          valign center_ref
          text_halign right
@@ -106,7 +106,7 @@ FrameWidgetClass rootFrame {
         TextWidgetClass LabelMembers {
          ignorepointer 1
          color 1 0.7 0.3 1
-         text "👥 УЧАСТНИКИ"
+         text "УЧАСТНИКИ"
          position 0 0.015
          size 1 0.045
          halign center_ref
@@ -148,7 +148,7 @@ FrameWidgetClass rootFrame {
         TextWidgetClass LabelNearby {
          ignorepointer 1
          color 0.7 0.9 0.7 1
-         text "👤 ИГРОКИ РЯДОМ"
+         text "ИГРОКИ РЯДОМ"
          position 0 0.49
          size 1 0.045
          halign center_ref
@@ -172,14 +172,14 @@ FrameWidgetClass rootFrame {
          }
         }
         PanelWidgetClass InputBg {
-         color 0.15 0.12 0.12 1
+         color 0.2 0.18 0.18 1
          position 0.025 0.80
          size 0.95 0.06
          halign center_ref
          style DayZDefaultPanel
          {
           EditBoxWidgetClass InputPlayerName {
-           color 0.9 0.9 0.9 1
+           color 1 1 1 1
            position 0.02 0.1
            size 0.96 0.8
            halign center_ref
@@ -190,7 +190,7 @@ FrameWidgetClass rootFrame {
          }
         }
         ButtonWidgetClass ButtonAddMember {
-         color 0.2 0.5 0.2 1
+         color 0.2 0.55 0.2 1
          position 0.025 0.88
          size 0.95 0.065
          halign center_ref
@@ -210,7 +210,7 @@ FrameWidgetClass rootFrame {
         TextWidgetClass LabelSettings {
          ignorepointer 1
          color 1 0.7 0.3 1
-         text "⚙️ УПРАВЛЕНИЕ"
+         text "УПРАВЛЕНИЕ"
          position 0 0.015
          size 1 0.045
          halign center_ref
@@ -218,12 +218,12 @@ FrameWidgetClass rootFrame {
          font "gui/fonts/etelkatextpro16"
         }
         ButtonWidgetClass ButtonUpgrade {
-         color 0.7 0.5 0.1 1
+         color 0.8 0.55 0.1 1
          position 0.05 0.08
          size 0.9 0.07
          halign center_ref
          style DayZDefaultButton
-         text "⬆ УЛУЧШИТЬ"
+         text "УЛУЧШИТЬ"
          font "gui/fonts/etelkatextpro16"
         }
         PanelWidgetClass UpgradeInfoBg {
@@ -249,12 +249,12 @@ FrameWidgetClass rootFrame {
          }
         }
         ButtonWidgetClass ButtonDeleteTerritory {
-         color 0.6 0.1 0.1 1
+         color 0.7 0.15 0.15 1
          position 0.05 0.88
          size 0.9 0.065
          halign center_ref
          style DayZDefaultButton
-         text "🗑 УДАЛИТЬ"
+         text "УДАЛИТЬ"
          font "gui/fonts/etelkatextpro14"
         }
        }
@@ -269,7 +269,7 @@ FrameWidgetClass rootFrame {
         TextWidgetClass LabelLogs {
          ignorepointer 1
          color 1 0.7 0.3 1
-         text "📊 ЛИМИТЫ"
+         text "ЛИМИТЫ СТРОЙКИ"
          position 0 0.015
          size 1 0.045
          halign center_ref
