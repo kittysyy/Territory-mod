@@ -1,0 +1,244 @@
+FrameWidgetClass rootFrame {
+ position 0 0
+ size 1 1
+ halign center_ref
+ valign center_ref
+ {
+  PanelWidgetClass BackgroundOverlay {
+   color 0 0 0 0.7
+   position 0 0
+   size 1 1
+   halign center_ref
+   valign center_ref
+   style DayZDefaultPanel
+  }
+  PanelWidgetClass MainPanel {
+   ignorepointer 0
+   color 0.1 0.1 0.1 0.98
+   position 0 -0.05
+   size 0.85 0.8
+   halign center_ref
+   valign center_ref
+   style DayZDefaultPanel
+   {
+    PanelWidgetClass Header {
+     ignorepointer 1
+     color 0.6 0 0 1
+     position 0 0
+     size 1 0.08
+     halign center_ref
+     valign top_ref
+     style DayZDefaultPanel
+     {
+      TextWidgetClass Title {
+       ignorepointer 1
+       text "УПРАВЛЕНИЕ ТЕРРИТОРИЕЙ"
+       position 0.02 0
+       size 0.5 1
+       halign left_ref
+       valign center_ref
+       text_halign left
+       text_valign center
+       font "gui/fonts/etelkatextpro22"
+      }
+      ButtonWidgetClass ButtonClose {
+       color 0.8 0 0 1
+       position -0.02 0
+       size 0.04 0.8
+       halign right_ref
+       valign center_ref
+       style DayZDefaultButton
+       text "X"
+       font "gui/fonts/etelkatextpro22"
+      }
+     }
+    }
+    PanelWidgetClass ContentBody {
+     ignorepointer 1
+     position 0 0.08
+     size 1 0.92
+     halign center_ref
+     valign top_ref
+     {
+      PanelWidgetClass OwnerInfoPanel {
+       ignorepointer 1
+       position 0.02 0.01
+       size 0.45 0.05
+       halign left_ref
+       valign top_ref
+       {
+        TextWidgetClass OwnerTextLabel {
+         ignorepointer 1
+         text "Владелец: Загрузка..."
+         position 0 0
+         size 1 1
+         halign left_ref
+         valign center_ref
+         text_valign center
+         font "gui/fonts/etelkatextpro16"
+        }
+       }
+      }
+      TextWidgetClass LevelTextLabel {
+       ignorepointer 1
+       text "Уровень: 1"
+       position 0.50 0.01
+       size 0.45 0.05
+       halign left_ref
+       valign top_ref
+       text_halign right
+       text_valign center
+       font "gui/fonts/etelkatextpro16"
+       color 1 0.8 0 1
+      }
+      PanelWidgetClass ColumnLeft {
+       ignorepointer 1
+       color 0.3 0 0 0.3
+       position 0.01 0.08
+       size 0.3 0.85
+       style DayZDefaultPanel
+       {
+        TextWidgetClass LabelMembers {
+         ignorepointer 1
+         text "СПИСОК УЧАСТНИКОВ"
+         position 0 0.01
+         size 1 0.04
+         halign center_ref
+         text_halign center
+         font "gui/fonts/etelkatextpro16"
+        }
+        TextListboxWidgetClass MembersList {
+         position 0 0.06
+         size 0.95 0.35
+         halign center_ref
+         style Default
+        }
+        ButtonWidgetClass ButtonKickMember {
+         color 0.4 0 0 1
+         position 0 0.42
+         size 0.95 0.05
+         halign center_ref
+         style DayZDefaultButton
+         text "ИСКЛЮЧИТЬ ВЫБРАННОГО"
+        }
+        PanelWidgetClass Separator {
+         color 1 1 1 0.2
+         position 0 0.49
+         size 0.9 0.005
+         halign center_ref
+         style DayZDefaultPanel
+        }
+        TextWidgetClass LabelNearby {
+         ignorepointer 1
+         text "ДОБАВИТЬ ИГРОКА РЯДОМ"
+         position 0 0.51
+         size 1 0.04
+         halign center_ref
+         text_halign center
+         font "gui/fonts/etelkatextpro16"
+        }
+        TextListboxWidgetClass NearbyPlayersList {
+         position 0 0.56
+         size 0.95 0.25
+         halign center_ref
+         style Default
+        }
+        EditBoxWidgetClass InputPlayerName {
+         position 0 0.83
+         size 0.95 0.05
+         halign center_ref
+         style Default
+         text ""
+        }
+        ButtonWidgetClass ButtonAddMember {
+         color 0 0.4 0 1
+         position 0 0.90
+         size 0.95 0.08
+         halign center_ref
+         style DayZDefaultButton
+         text "ДОБАВИТЬ"
+        }
+       }
+      }
+      PanelWidgetClass ColumnCenter {
+       ignorepointer 1
+       color 0.3 0 0 0.3
+       position 0.32 0.08
+       size 0.35 0.85
+       style DayZDefaultPanel
+       {
+        TextWidgetClass LabelSettings {
+         ignorepointer 1
+         text "УПРАВЛЕНИЕ"
+         position 0 0.02
+         size 1 0.05
+         halign center_ref
+         text_halign center
+         font "gui/fonts/etelkatextpro22"
+        }
+        ButtonWidgetClass ButtonUpgrade {
+         color 0.8 0.5 0 1
+         position 0 0.15
+         size 0.9 0.08
+         halign center_ref
+         style DayZDefaultButton
+         text "УЛУЧШИТЬ ТЕРРИТОРИЮ"
+         font "gui/fonts/etelkatextpro16"
+        }
+        TextWidgetClass UpgradeInfoText {
+         ignorepointer 1
+         text "Стоимость: Загрузка..."
+         position 0 0.24
+         size 0.9 0.4
+         halign center_ref
+         text_halign center
+         text_valign top
+         font "gui/fonts/etelkatextpro14"
+         multiline 1
+        }
+        ButtonWidgetClass ButtonDeleteTerritory {
+         color 0.5 0 0 1
+         position 0 0.9
+         size 0.9 0.06
+         halign center_ref
+         style DayZDefaultButton
+         text "УДАЛИТЬ ТЕРРИТОРИЮ"
+         font "gui/fonts/etelkatextpro16"
+        }
+       }
+      }
+      PanelWidgetClass ColumnRight {
+       ignorepointer 1
+       color 0.3 0 0 0.3
+       position 0.68 0.08
+       size 0.3 0.85
+       style DayZDefaultPanel
+       {
+        TextWidgetClass LabelLogs {
+         ignorepointer 1
+         text "ЛИМИТЫ СТРОЙКИ"
+         position 0 0.02
+         size 1 0.05
+         halign center_ref
+         text_halign center
+         font "gui/fonts/etelkatextpro22"
+        }
+        TextWidgetClass LimitsInfoText {
+         ignorepointer 1
+         text "Загрузка..."
+         position 0 0.10
+         size 0.9 0.8
+         halign center_ref
+         text_halign center
+         text_valign top
+         font "gui/fonts/etelkatextpro16"
+         multiline 1
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}
