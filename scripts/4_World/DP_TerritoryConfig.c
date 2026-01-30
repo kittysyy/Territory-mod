@@ -70,18 +70,35 @@ class DP_TerritoryConfig
 
     void CreateDefault()
     {
-        StructureItems.Insert("Fence"); StructureItems.Insert("Watchtower"); StructureItems.Insert("FenceKit"); StructureItems.Insert("WatchtowerKit");
-        TentItems.Insert("MediumTent"); TentItems.Insert("LargeTent"); TentItems.Insert("CarTent"); TentItems.Insert("PartyTent");
-        FurnitureItems.Insert("Barrel_ColorBase"); FurnitureItems.Insert("SeaChest"); FurnitureItems.Insert("WoodenCrate"); FurnitureItems.Insert("BarrelHoles_ColorBase");
+        // Structure items (walls, watchtowers, etc.)
+        StructureItems.Insert("Fence"); 
+        StructureItems.Insert("Watchtower"); 
+        StructureItems.Insert("FenceKit"); 
+        StructureItems.Insert("WatchtowerKit");
         
+        // Tent items
+        TentItems.Insert("MediumTent"); 
+        TentItems.Insert("LargeTent"); 
+        TentItems.Insert("CarTent"); 
+        TentItems.Insert("PartyTent");
+        
+        // Furniture items (storage containers)
+        FurnitureItems.Insert("Barrel_ColorBase"); 
+        FurnitureItems.Insert("SeaChest"); 
+        FurnitureItems.Insert("WoodenCrate"); 
+        FurnitureItems.Insert("BarrelHoles_ColorBase");
+        
+        // Level 1: Starter base
         DP_LevelDefinition l1 = new DP_LevelDefinition(1, 50.0, 10, 1, 5); 
         Levels.Insert(l1);
 
+        // Level 2: Small base
         DP_LevelDefinition l2 = new DP_LevelDefinition(2, 100.0, 20, 2, 10);
         l2.UpgradeCost.Insert(new DP_CostItem("Nail", "Гвозди (шт)", 50)); 
         l2.UpgradeCost.Insert(new DP_CostItem("WoodenPlank", "Доски", 20)); 
         Levels.Insert(l2);
         
+        // Level 3: Large base
         DP_LevelDefinition l3 = new DP_LevelDefinition(3, 150.0, 40, 5, 20);
         l3.UpgradeCost.Insert(new DP_CostItem("Nail", "Гвозди (шт)", 99)); 
         l3.UpgradeCost.Insert(new DP_CostItem("MetalPlate", "Листы железа", 10)); 
@@ -157,7 +174,16 @@ class DP_TerritoryConfig
     
     bool IsTypeInList(string cls, array<string> list)
     {
-        foreach(string item : list) { if (GetGame().IsKindOf(cls, item)) return true; }
+        if (!list || !cls || cls == "") return false;
+        
+        foreach(string item : list) 
+        { 
+            if (GetGame().IsKindOf(cls, item)) 
+            {
+                return true; 
+            }
+        }
+        
         return false;
     }
 }
