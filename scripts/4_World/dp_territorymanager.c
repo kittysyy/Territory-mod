@@ -23,6 +23,12 @@ class DP_TerritoryManager
         if (!s_Instance) s_Instance = new DP_TerritoryManager();
         return s_Instance;
     }
+    
+    // Public getter for m_Ownerships
+    array<ref TM_TerritoryOwnership> GetOwnerships()
+    {
+        return m_Ownerships;
+    }
 
     Object TM_GetNearestFlag(vector position, float radius)
     {
