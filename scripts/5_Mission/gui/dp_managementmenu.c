@@ -8,6 +8,8 @@ class DP_ManagementMenu : UIScriptedMenu
 
     override Widget Init()
     {
+        m_UpdateTimer = 0.0; // Initialize update timer
+        
         layoutRoot = GetGame().GetWorkspace().CreateWidgets("DP_TerritoryMod/gui/layouts/dp_management.layout");
         if (!layoutRoot) return null;
         m_OwnerText = TextWidget.Cast(layoutRoot.FindAnyWidget("OwnerTextLabel"));
@@ -39,8 +41,16 @@ class DP_ManagementMenu : UIScriptedMenu
     {
         if (!m_TargetFlag) return;
         
+        // Validate player and identity
+        PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+        if (!player || !player.GetIdentity())
+        {
+            Print("[DP_Territory ERROR] Player or identity is null in UpdateInfo");
+            return;
+        }
+        
         string ownerID = m_TargetFlag.GetOwnerID(); 
-        string myID = GetGame().GetPlayer().GetIdentity().GetId(); 
+        string myID = player.GetIdentity().GetId(); 
         int currentLvl = m_TargetFlag.GetTerritoryLevel();
         
         if (m_LevelText) 
@@ -350,7 +360,18 @@ class DP_ManagementMenu : UIScriptedMenu
             }
             
             if (idToAdd != "") 
-            { 
+            {
+                // Client-side validation for immediate feedback
+                if (!m_TargetFlag.IsValidPlayerId(idToAdd))
+                {
+                    PlayerBase localPlayer = PlayerBase.Cast(GetGame().GetPlayer());
+                    if (localPlayer)
+                    {
+                        localPlayer.MessageImportant("⛔ Недопустимый формат ID игрока!");
+                    }
+                    return true;
+                }
+                
                 m_TargetFlag.RequestAddMember(idToAdd); 
                 m_InputName.SetText(""); 
             } 
@@ -374,22 +395,34 @@ class DP_ManagementMenu : UIScriptedMenu
     
     void UpdateNearbyPlayers() 
     { 
-        if (!m_NearbyList || !m_NearbyList.IsVisible()) return; 
+        if (!m_NearbyList || !m_NearbyList.IsVisible()) return;
+        if (!m_TargetFlag)
+        {
+            Print("[DP_Territory ERROR] m_TargetFlag is null in UpdateNearbyPlayers");
+            return;
+        }
+        
+        PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+        if (!player || !player.GetIdentity())
+        {
+            return; // Can't update if player is not valid
+        }
         
         m_NearbyList.ClearItems(); 
         array<Object> objects = new array<Object>; 
         array<CargoBase> proxyCargos = new array<CargoBase>; 
         float currentR = m_TargetFlag.GetCurrentRadius(); 
         
-        GetGame().GetObjectsAtPosition(GetGame().GetPlayer().GetPosition(), currentR, objects, proxyCargos); 
+        GetGame().GetObjectsAtPosition(player.GetPosition(), currentR, objects, proxyCargos); 
         
+        string myID = player.GetIdentity().GetId();
         for (int i = 0; i < objects.Count(); i++) 
         { 
             PlayerBase pb = PlayerBase.Cast(objects.Get(i)); 
             if (pb && pb.GetIdentity()) 
             { 
                 string pID = pb.GetIdentity().GetId(); 
-                if (pID == GetGame().GetPlayer().GetIdentity().GetId()) 
+                if (pID == myID) 
                 {
                     continue; // Skip self
                 }

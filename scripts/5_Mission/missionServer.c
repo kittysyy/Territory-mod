@@ -26,4 +26,15 @@ modded class MissionServer
             m_DecayManager.OnUpdate(timeslice);
         }
     }
+    
+    void ~MissionServer()
+    {
+        // Cleanup decay manager
+        if (m_DecayManager)
+        {
+            Print("[DP_Territory] Cleaning up decay manager");
+            delete m_DecayManager;
+            m_DecayManager = null;
+        }
+    }
 }

@@ -166,9 +166,14 @@ class DP_TerritoryManager
             }
         }
         
+        // Always log the result for debugging
         if (removedCount > 0)
         {
             Print(string.Format("[DP_Territory] Unregistered %1 territory(ies) for owner %2", removedCount, ownerId));
+        }
+        else
+        {
+            Print(string.Format("[DP_Territory] No territories found for owner %1", ownerId));
         }
     }
     

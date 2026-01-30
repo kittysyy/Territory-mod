@@ -2,7 +2,6 @@ class DP_DecayManager
 {
     const float DECAY_INTERVAL = 3600.0; // 1 Hour
     const float BASE_DAMAGE = 50.0;
-    const float MAX_SEARCH_RADIUS = 20000.0; // Maximum search radius for finding flags
     
     float m_Timer;
 
@@ -64,6 +63,8 @@ class DP_DecayManager
                 if (baseObj.IsInherited(Fence) || baseObj.IsInherited(Watchtower))
                 {
                     EntityAI building = EntityAI.Cast(baseObj);
+                    // Only apply damage to buildings that are not already ruined
+                    // Buildings near ruin will be processed and may become ruined this cycle
                     if (building && !building.IsRuined()) 
                     {
                         building.AddHealth("", "", -finalDamage);

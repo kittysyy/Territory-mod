@@ -128,8 +128,12 @@ class DP_TerritoryConfig
         // Fallback: return first level if available
         if (Levels.Count() > 0) 
         {
-            Print(string.Format("[DP_Territory WARNING] Level %1 not found, returning level 1", level));
-            return Levels.Get(0);
+            DP_LevelDefinition firstLevel = Levels.Get(0);
+            if (firstLevel)
+            {
+                Print(string.Format("[DP_Territory WARNING] Level %1 not found, returning level 1", level));
+                return firstLevel;
+            }
         }
         
         // Last resort: return null
@@ -142,7 +146,7 @@ class DP_TerritoryConfig
         if (!Levels || Levels.Count() == 0)
         {
             Print("[DP_Territory WARNING] No levels defined, using default radius");
-            return DP_TerritoryConstants.DEFAULT_RADIUS * 3.0; // Default max = 150m
+            return DP_TerritoryConstants.DEFAULT_RADIUS * DP_TerritoryConstants.DEFAULT_MAX_RADIUS_MULTIPLIER;
         }
         
         float maxR = 0;
@@ -158,7 +162,7 @@ class DP_TerritoryConfig
         if (maxR == 0) 
         {
             Print("[DP_Territory WARNING] No valid radius in config, using default");
-            return DP_TerritoryConstants.DEFAULT_RADIUS * 3.0; // 150m
+            return DP_TerritoryConstants.DEFAULT_RADIUS * DP_TerritoryConstants.DEFAULT_MAX_RADIUS_MULTIPLIER;
         }
         
         return maxR;
