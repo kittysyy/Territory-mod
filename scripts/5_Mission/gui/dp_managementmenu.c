@@ -48,8 +48,8 @@ class DP_ManagementMenu : UIScriptedMenu
         array<Object> objects = new array<Object>; array<CargoBase> proxyCargos = new array<CargoBase>;
         
         // --- ИСПРАВЛЕНИЕ: ПРИНУДИТЕЛЬНЫЙ РАДИУС ---
-        // Если конфиг уровня вернул 0 (баг конфига), ставим 50.0 вручную.
-        float searchRadius = 50.0;
+        // Если конфиг уровня вернул 0 (баг конфига), используем дефолтное значение
+        float searchRadius = DP_TerritoryConstants.DEFAULT_RADIUS;
         if (lvlDef.Radius > 0) searchRadius = lvlDef.Radius;
         // ------------------------------------------
 
@@ -199,6 +199,22 @@ class DP_ManagementMenu : UIScriptedMenu
     }
     
     void UpdateNearbyPlayers() { if (!m_NearbyList || !m_NearbyList.IsVisible()) return; m_NearbyList.ClearItems(); array<Object> objects = new array<Object>; array<CargoBase> proxyCargos = new array<CargoBase>; float currentR = m_TargetFlag.GetCurrentRadius(); GetGame().GetObjectsAtPosition(GetGame().GetPlayer().GetPosition(), currentR, objects, proxyCargos); for (int i = 0; i < objects.Count(); i++) { PlayerBase pb = PlayerBase.Cast(objects.Get(i)); if (pb && pb.GetIdentity()) { string pID = pb.GetIdentity().GetId(); if (pID == GetGame().GetPlayer().GetIdentity().GetId()) continue; m_NearbyList.AddItem(pb.GetIdentity().GetName(), new Param1<string>(pID), 0); } } }
-    override void Update(float timeslice) { super.Update(timeslice); m_UpdateTimer += timeslice; if (m_UpdateTimer > 0.5) { UpdateInfo(); UpdateNearbyPlayers(); m_UpdateTimer = 0; } Input input = GetGame().GetInput(); if (input.LocalPress("UAUIBack", false)) Close(); }
+    override void Update(float timeslice) 
+    { 
+        super.Update(timeslice); 
+        m_UpdateTimer += timeslice; 
+        if (m_UpdateTimer > DP_TerritoryConstants.UPDATE_INTERVAL) 
+        { 
+            UpdateInfo(); 
+            UpdateNearbyPlayers(); 
+            m_UpdateTimer = 0; 
+        } 
+        
+        Input input = GetGame().GetInput(); 
+        if (input.LocalPress("UAUIBack", false)) 
+        {
+            Close(); 
+        }
+    }
     override bool OnKeyDown(Widget w, int x, int y, int key) { super.OnKeyDown(w, x, y, key); if (key == KeyCode.KC_ESCAPE) { Close(); return true; } return false; }
 }
