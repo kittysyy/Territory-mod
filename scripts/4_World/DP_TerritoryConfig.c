@@ -91,19 +91,59 @@ class DP_TerritoryConfig
     
     DP_LevelDefinition GetLevelConfig(int level)
     {
+        // Validate level parameter
+        if (level < 1)
+        {
+            Print(string.Format("[DP_Territory WARNING] Invalid level requested: %1, returning level 1", level));
+            level = 1;
+        }
+        
+        // Search for exact level match
         for (int i = 0; i < Levels.Count(); i++)
         {
-            if (Levels.Get(i).Level == level) return Levels.Get(i);
+            DP_LevelDefinition levelDef = Levels.Get(i);
+            if (levelDef && levelDef.Level == level) 
+            {
+                return levelDef;
+            }
         }
-        if (Levels.Count() > 0) return Levels.Get(0);
+        
+        // Fallback: return first level if available
+        if (Levels.Count() > 0) 
+        {
+            Print(string.Format("[DP_Territory WARNING] Level %1 not found, returning level 1", level));
+            return Levels.Get(0);
+        }
+        
+        // Last resort: return null
+        Print("[DP_Territory ERROR] No levels defined in config!");
         return null;
     }
     
     float GetMaxPossibleRadius()
     {
+        if (!Levels || Levels.Count() == 0)
+        {
+            Print("[DP_Territory WARNING] No levels defined, using default radius");
+            return DP_TerritoryConstants.DEFAULT_RADIUS * 3.0; // Default max = 150m
+        }
+        
         float maxR = 0;
-        foreach(DP_LevelDefinition l : Levels) { if (l.Radius > maxR) maxR = l.Radius; }
-        if (maxR == 0) return 150.0;
+        foreach(DP_LevelDefinition l : Levels) 
+        { 
+            if (l && l.Radius > maxR) 
+            {
+                maxR = l.Radius; 
+            }
+        }
+        
+        // If no valid radius found in config, use default
+        if (maxR == 0) 
+        {
+            Print("[DP_Territory WARNING] No valid radius in config, using default");
+            return DP_TerritoryConstants.DEFAULT_RADIUS * 3.0; // 150m
+        }
+        
         return maxR;
     }
     

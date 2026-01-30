@@ -85,8 +85,49 @@ modded class TerritoryFlag
     void RequestClaim() { if (GetGame().IsClient()) GetGame().RPCSingleParam(this, RPC_CLAIM_TERRITORY, null, true); }
     void RequestDelete() { if (GetGame().IsClient()) GetGame().RPCSingleParam(this, RPC_DELETE_TERRITORY, null, true); }
     void RequestUpgrade() { if (GetGame().IsClient()) GetGame().RPCSingleParam(this, RPC_UPGRADE, null, true); }
-    void RequestAddMember(string id) { if (GetGame().IsClient() && id != "") GetGame().RPCSingleParam(this, RPC_ADD_MEMBER, new Param1<string>(id), true); }
-    void RequestRemoveMember(string id) { if (GetGame().IsClient() && id != "") GetGame().RPCSingleParam(this, RPC_REM_MEMBER, new Param1<string>(id), true); }
+    void RequestAddMember(string id) 
+    { 
+        if (GetGame().IsClient() && IsValidPlayerId(id)) 
+        {
+            GetGame().RPCSingleParam(this, RPC_ADD_MEMBER, new Param1<string>(id), true); 
+        }
+    }
+    
+    void RequestRemoveMember(string id) 
+    { 
+        if (GetGame().IsClient() && IsValidPlayerId(id)) 
+        {
+            GetGame().RPCSingleParam(this, RPC_REM_MEMBER, new Param1<string>(id), true); 
+        }
+    }
+    
+    // Helper function to validate player ID format
+    bool IsValidPlayerId(string id)
+    {
+        if (!id || id == "") return false;
+        
+        // Player IDs should be reasonable length (typically SteamID64 or similar)
+        if (id.Length() < 3 || id.Length() > 64) return false;
+        
+        // Basic check for invalid characters that might cause issues
+        // Allow alphanumeric, dash, and underscore
+        for (int i = 0; i < id.Length(); i++)
+        {
+            int charCode = id.Get(i);
+            bool isNumber = (charCode >= 48 && charCode <= 57); // 0-9
+            bool isUpperLetter = (charCode >= 65 && charCode <= 90); // A-Z
+            bool isLowerLetter = (charCode >= 97 && charCode <= 122); // a-z
+            bool isDash = (charCode == 45); // -
+            bool isUnderscore = (charCode == 95); // _
+            
+            if (!isNumber && !isUpperLetter && !isLowerLetter && !isDash && !isUnderscore)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 
     override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
     {
@@ -129,6 +170,15 @@ modded class TerritoryFlag
                 Param1<string> pAdd; 
                 if (ctx.Read(pAdd) && senderID == m_OwnerID) 
                 { 
+                    // Validate the player ID
+                    if (!IsValidPlayerId(pAdd.param1))
+                    {
+                        player.MessageImportant("⛔ Недопустимый ID игрока!");
+                        Print(string.Format("[DP_Territory SECURITY] Invalid player ID attempt: %1", pAdd.param1));
+                        return;
+                    }
+                    
+                    // Check if already a member
                     if (m_Members.Find(pAdd.param1) == -1) 
                     { 
                         int maxMembers = DP_TerritoryConstants.DEFAULT_MAX_MEMBERS;
@@ -150,7 +200,12 @@ modded class TerritoryFlag
                         m_Members.Insert(pAdd.param1); 
                         SetSynchDirty(); SendSyncToClient(sender); 
                         player.MessageImportant("✅ Добавлен (" + m_Members.Count() + "/" + totalLimit + ")");
-                    } 
+                        Print(string.Format("[DP_Territory] Player %1 added member %2", senderID, pAdd.param1));
+                    }
+                    else
+                    {
+                        player.MessageImportant("⛔ Этот игрок уже добавлен!");
+                    }
                 } 
                 return;
             }
@@ -230,14 +285,28 @@ modded class TerritoryFlag
             { 
                 Param1<string> pRem; 
                 if (ctx.Read(pRem) && senderID == m_OwnerID) 
-                { 
+                {
+                    // Validate the player ID
+                    if (!IsValidPlayerId(pRem.param1))
+                    {
+                        player.MessageImportant("⛔ Недопустимый ID игрока!");
+                        Print(string.Format("[DP_Territory SECURITY] Invalid player ID in remove: %1", pRem.param1));
+                        return;
+                    }
+                    
                     int idx = m_Members.Find(pRem.param1); 
                     if (idx != -1) 
                     { 
                         m_Members.Remove(idx); 
                         SetSynchDirty(); 
-                        SendSyncToClient(sender); 
-                    } 
+                        SendSyncToClient(sender);
+                        player.MessageImportant("✅ Игрок исключен!");
+                        Print(string.Format("[DP_Territory] Player %1 removed member %2", senderID, pRem.param1));
+                    }
+                    else
+                    {
+                        player.MessageImportant("⛔ Игрок не найден в списке!");
+                    }
                 } 
                 return; 
             }
