@@ -36,8 +36,8 @@ modded class TerritoryFlag
         // Если конфиг есть И радиус в нем больше 0 - берем из конфига
         if (lvlDef && lvlDef.Radius > 0) return lvlDef.Radius;
         
-        // Если конфига нет или там записан 0 - принудительно возвращаем 50 метров
-        return 50.0;
+        // Если конфига нет или там записан 0 - возвращаем дефолтное значение
+        return DP_TerritoryConstants.DEFAULT_RADIUS;
     }
     // ---------------------------
     
@@ -85,8 +85,49 @@ modded class TerritoryFlag
     void RequestClaim() { if (GetGame().IsClient()) GetGame().RPCSingleParam(this, RPC_CLAIM_TERRITORY, null, true); }
     void RequestDelete() { if (GetGame().IsClient()) GetGame().RPCSingleParam(this, RPC_DELETE_TERRITORY, null, true); }
     void RequestUpgrade() { if (GetGame().IsClient()) GetGame().RPCSingleParam(this, RPC_UPGRADE, null, true); }
-    void RequestAddMember(string id) { if (GetGame().IsClient() && id != "") GetGame().RPCSingleParam(this, RPC_ADD_MEMBER, new Param1<string>(id), true); }
-    void RequestRemoveMember(string id) { if (GetGame().IsClient() && id != "") GetGame().RPCSingleParam(this, RPC_REM_MEMBER, new Param1<string>(id), true); }
+    void RequestAddMember(string id) 
+    { 
+        if (GetGame().IsClient() && IsValidPlayerId(id)) 
+        {
+            GetGame().RPCSingleParam(this, RPC_ADD_MEMBER, new Param1<string>(id), true); 
+        }
+    }
+    
+    void RequestRemoveMember(string id) 
+    { 
+        if (GetGame().IsClient() && IsValidPlayerId(id)) 
+        {
+            GetGame().RPCSingleParam(this, RPC_REM_MEMBER, new Param1<string>(id), true); 
+        }
+    }
+    
+    // Helper function to validate player ID format
+    bool IsValidPlayerId(string id)
+    {
+        if (!id || id == "") return false;
+        
+        // Player IDs should be reasonable length (typically SteamID64 or similar)
+        if (id.Length() < 3 || id.Length() > 64) return false;
+        
+        // Basic check for invalid characters that might cause issues
+        // Allow alphanumeric, dash, and underscore
+        for (int i = 0; i < id.Length(); i++)
+        {
+            int charCode = id.Get(i);
+            bool isNumber = (charCode >= 48 && charCode <= 57); // 0-9
+            bool isUpperLetter = (charCode >= 65 && charCode <= 90); // A-Z
+            bool isLowerLetter = (charCode >= 97 && charCode <= 122); // a-z
+            bool isDash = (charCode == 45); // -
+            bool isUnderscore = (charCode == 95); // _
+            
+            if (!isNumber && !isUpperLetter && !isLowerLetter && !isDash && !isUnderscore)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 
     override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
     {
@@ -129,9 +170,18 @@ modded class TerritoryFlag
                 Param1<string> pAdd; 
                 if (ctx.Read(pAdd) && senderID == m_OwnerID) 
                 { 
+                    // Validate the player ID
+                    if (!IsValidPlayerId(pAdd.param1))
+                    {
+                        player.MessageImportant("⛔ Недопустимый ID игрока!");
+                        Print(string.Format("[DP_Territory SECURITY] Invalid player ID attempt: %1", pAdd.param1));
+                        return;
+                    }
+                    
+                    // Check if already a member
                     if (m_Members.Find(pAdd.param1) == -1) 
                     { 
-                        int maxMembers = 3;
+                        int maxMembers = DP_TerritoryConstants.DEFAULT_MAX_MEMBERS;
                         float bonusMembers = 0;
                         
                         if (player.GetTerjeSkills()) 
@@ -150,7 +200,12 @@ modded class TerritoryFlag
                         m_Members.Insert(pAdd.param1); 
                         SetSynchDirty(); SendSyncToClient(sender); 
                         player.MessageImportant("✅ Добавлен (" + m_Members.Count() + "/" + totalLimit + ")");
-                    } 
+                        Print(string.Format("[DP_Territory] Player %1 added member %2", senderID, pAdd.param1));
+                    }
+                    else
+                    {
+                        player.MessageImportant("⛔ Этот игрок уже добавлен!");
+                    }
                 } 
                 return;
             }
@@ -216,9 +271,51 @@ modded class TerritoryFlag
                 return;
             }
 
-            if (rpc_type == RPC_DELETE_TERRITORY) { if (senderID == m_OwnerID) { DP_TerritoryManager.TM_GetInstance().TM_UnregisterByOwnerId(m_OwnerID); GetGame().ObjectDelete(this); } return; }
-            if (rpc_type == RPC_REM_MEMBER) { Param1<string> pRem; if (ctx.Read(pRem) && senderID == m_OwnerID) { int idx = m_Members.Find(pRem.param1); if (idx != -1) { m_Members.Remove(idx); SetSynchDirty(); SendSyncToClient(sender); } } return; }
-            if (rpc_type == RPC_REQ_DATA) { SendSyncToClient(sender); return; }
+            if (rpc_type == RPC_DELETE_TERRITORY) 
+            { 
+                if (senderID == m_OwnerID) 
+                { 
+                    DP_TerritoryManager.TM_GetInstance().TM_UnregisterByOwnerId(m_OwnerID); 
+                    GetGame().ObjectDelete(this); 
+                } 
+                return; 
+            }
+            
+            if (rpc_type == RPC_REM_MEMBER) 
+            { 
+                Param1<string> pRem; 
+                if (ctx.Read(pRem) && senderID == m_OwnerID) 
+                {
+                    // Validate the player ID
+                    if (!IsValidPlayerId(pRem.param1))
+                    {
+                        player.MessageImportant("⛔ Недопустимый ID игрока!");
+                        Print(string.Format("[DP_Territory SECURITY] Invalid player ID in remove: %1", pRem.param1));
+                        return;
+                    }
+                    
+                    int idx = m_Members.Find(pRem.param1); 
+                    if (idx != -1) 
+                    { 
+                        m_Members.Remove(idx); 
+                        SetSynchDirty(); 
+                        SendSyncToClient(sender);
+                        player.MessageImportant("✅ Игрок исключен!");
+                        Print(string.Format("[DP_Territory] Player %1 removed member %2", senderID, pRem.param1));
+                    }
+                    else
+                    {
+                        player.MessageImportant("⛔ Игрок не найден в списке!");
+                    }
+                } 
+                return; 
+            }
+            
+            if (rpc_type == RPC_REQ_DATA) 
+            { 
+                SendSyncToClient(sender); 
+                return; 
+            }
         }
 
         if (GetGame().IsClient())
@@ -226,7 +323,13 @@ modded class TerritoryFlag
             if (rpc_type == RPC_SYNC_DATA)
             {
                 Param3<string, array<string>, array<ref DP_CostItem>> data;
-                if (ctx.Read(data)) { m_OwnerID = data.param1; m_Members = data.param2; m_ClientNextLevelCost = data.param3; DP_TerritoryManager.TM_GetInstance().m_LastReceivedOwnerID = m_OwnerID; }
+                if (ctx.Read(data)) 
+                { 
+                    m_OwnerID = data.param1; 
+                    m_Members = data.param2; 
+                    m_ClientNextLevelCost = data.param3; 
+                    DP_TerritoryManager.TM_GetInstance().m_LastReceivedOwnerID = m_OwnerID; 
+                }
             }
         }
     }
@@ -272,9 +375,75 @@ modded class TerritoryFlag
         return ""; 
     }
     
-    void ConsumeResourcesFlag(array<ref DP_CostItem> costs) { if (!costs) return; foreach(DP_CostItem cost : costs) { RemoveItemAmountInEntity(this, cost.ClassName, cost.Count); } }
-    int GetItemAmountInEntity(EntityAI entity, string classname) { if (!entity) return 0; GameInventory inventory = entity.GetInventory(); if (!inventory) return 0; CargoBase cargo = inventory.GetCargo(); if (!cargo) return 0; int count = 0; int cargoCount = cargo.GetItemCount(); for (int i = 0; i < cargoCount; i++) { EntityAI item = cargo.GetItem(i); if (item && GetGame().IsKindOf(item.GetType(), classname)) { ItemBase ib = ItemBase.Cast(item); count += ib.GetQuantity(); if (ib.GetQuantityMax() == 0) count++; } } return count; }
-    void RemoveItemAmountInEntity(EntityAI entity, string classname, int amountToRemove) { if (!entity) return; GameInventory inventory = entity.GetInventory(); if (!inventory) return; CargoBase cargo = inventory.GetCargo(); if (!cargo) return; int needed = amountToRemove; for (int i = cargo.GetItemCount() - 1; i >= 0; i--) { if (needed <= 0) break; EntityAI item = cargo.GetItem(i); if (item && GetGame().IsKindOf(item.GetType(), classname)) { ItemBase ib = ItemBase.Cast(item); if (ib.GetQuantityMax() > 0) { int qty = ib.GetQuantity(); if (qty > needed) { ib.AddQuantity(-needed); needed = 0; } else { needed -= qty; GetGame().ObjectDelete(ib); } } else { GetGame().ObjectDelete(ib); needed--; } } } }
+    void ConsumeResourcesFlag(array<ref DP_CostItem> costs) 
+    { 
+        if (!costs) return; 
+        foreach(DP_CostItem cost : costs) 
+        { 
+            RemoveItemAmountInEntity(this, cost.ClassName, cost.Count); 
+        } 
+    }
+    int GetItemAmountInEntity(EntityAI entity, string classname) 
+    { 
+        if (!entity) return 0; 
+        GameInventory inventory = entity.GetInventory(); 
+        if (!inventory) return 0; 
+        CargoBase cargo = inventory.GetCargo(); 
+        if (!cargo) return 0; 
+        
+        int count = 0; 
+        int cargoCount = cargo.GetItemCount(); 
+        for (int i = 0; i < cargoCount; i++) 
+        { 
+            EntityAI item = cargo.GetItem(i); 
+            if (item && GetGame().IsKindOf(item.GetType(), classname)) 
+            { 
+                ItemBase ib = ItemBase.Cast(item); 
+                count += ib.GetQuantity(); 
+                if (ib.GetQuantityMax() == 0) count++; 
+            } 
+        } 
+        return count; 
+    }
+    
+    void RemoveItemAmountInEntity(EntityAI entity, string classname, int amountToRemove) 
+    { 
+        if (!entity) return; 
+        GameInventory inventory = entity.GetInventory(); 
+        if (!inventory) return; 
+        CargoBase cargo = inventory.GetCargo(); 
+        if (!cargo) return; 
+        
+        int needed = amountToRemove; 
+        for (int i = cargo.GetItemCount() - 1; i >= 0; i--) 
+        { 
+            if (needed <= 0) break; 
+            EntityAI item = cargo.GetItem(i); 
+            if (item && GetGame().IsKindOf(item.GetType(), classname)) 
+            { 
+                ItemBase ib = ItemBase.Cast(item); 
+                if (ib.GetQuantityMax() > 0) 
+                { 
+                    int qty = ib.GetQuantity(); 
+                    if (qty > needed) 
+                    { 
+                        ib.AddQuantity(-needed); 
+                        needed = 0; 
+                    } 
+                    else 
+                    { 
+                        needed -= qty; 
+                        GetGame().ObjectDelete(ib); 
+                    } 
+                } 
+                else 
+                { 
+                    GetGame().ObjectDelete(ib); 
+                    needed--; 
+                } 
+            } 
+        } 
+    }
     
     override void OnStoreSave(ParamsWriteContext ctx) 
     { 
@@ -299,7 +468,23 @@ modded class TerritoryFlag
         return true; 
     }
 
-    override void AfterStoreLoad() { super.AfterStoreLoad(); if (m_IsOwned && m_OwnerID != "") DP_TerritoryManager.TM_GetInstance().TM_RegisterOwner_Unique(m_OwnerID, this); }
-    array<ref DP_CostItem> GetNextLevelCostClient() { return m_ClientNextLevelCost; }
-    override void SetActions() { super.SetActions(); AddAction(DP_TerritoryFlagAction); }
+    override void AfterStoreLoad() 
+    { 
+        super.AfterStoreLoad(); 
+        if (m_IsOwned && m_OwnerID != "") 
+        {
+            DP_TerritoryManager.TM_GetInstance().TM_RegisterOwner_Unique(m_OwnerID, this); 
+        }
+    }
+    
+    array<ref DP_CostItem> GetNextLevelCostClient() 
+    { 
+        return m_ClientNextLevelCost; 
+    }
+    
+    override void SetActions() 
+    { 
+        super.SetActions(); 
+        AddAction(DP_TerritoryFlagAction); 
+    }
 }

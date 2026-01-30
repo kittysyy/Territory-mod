@@ -90,8 +90,8 @@ class CfgTerjeSkills
                 
                 stagesCount = 2;
                 
-                disabledIcon = "DP_TerritoryMod/gui/images/headacrhitect_icon_ca.paa";
-                enabledIcon = "DP_TerritoryMod/gui/images/headacrhitectActive_icon_ca.paa";
+                disabledIcon = "DP_TerritoryMod/gui/images/headarchitect_icon_ca.paa";
+                enabledIcon = "DP_TerritoryMod/gui/images/headarchitectActive_icon_ca.paa";
                 
                 requiredSkillLevels[] = {5, 15};
                 requiredPerkPoints[] = {1, 1};

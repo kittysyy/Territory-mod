@@ -8,6 +8,8 @@ class DP_ManagementMenu : UIScriptedMenu
 
     override Widget Init()
     {
+        m_UpdateTimer = 0.0; // Initialize update timer
+        
         layoutRoot = GetGame().GetWorkspace().CreateWidgets("DP_TerritoryMod/gui/layouts/dp_management.layout");
         if (!layoutRoot) return null;
         m_OwnerText = TextWidget.Cast(layoutRoot.FindAnyWidget("OwnerTextLabel"));
@@ -22,24 +24,139 @@ class DP_ManagementMenu : UIScriptedMenu
         m_BtnDelete = ButtonWidget.Cast(layoutRoot.FindAnyWidget("ButtonDeleteTerritory"));
         m_BtnUpgrade = ButtonWidget.Cast(layoutRoot.FindAnyWidget("ButtonUpgrade"));
         m_InputName = EditBoxWidget.Cast(layoutRoot.FindAnyWidget("InputPlayerName"));
+        
         Object obj = DP_TerritoryManager.TM_GetInstance().m_ClientPendingTarget;
-        if (obj) { m_TargetFlag = TerritoryFlag.Cast(obj); m_TargetFlag.RequestSyncDataAll(); UpdateInfo(); UpdateNearbyPlayers(); }
+        if (obj) 
+        { 
+            m_TargetFlag = TerritoryFlag.Cast(obj); 
+            m_TargetFlag.RequestSyncDataAll(); 
+            UpdateInfo(); 
+            UpdateNearbyPlayers(); 
+        }
+        
         return layoutRoot;
     }
 
     void UpdateInfo()
     {
         if (!m_TargetFlag) return;
-        string ownerID = m_TargetFlag.GetOwnerID(); string myID = GetGame().GetPlayer().GetIdentity().GetId(); int currentLvl = m_TargetFlag.GetTerritoryLevel();
-        if (m_LevelText) m_LevelText.SetText("Уровень: " + currentLvl);
-        if (m_LimitsInfo) UpdateLimits(currentLvl);
+        
+        // Validate player and identity
+        PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+        if (!player || !player.GetIdentity())
+        {
+            Print("[DP_Territory ERROR] Player or identity is null in UpdateInfo");
+            return;
+        }
+        
+        string ownerID = m_TargetFlag.GetOwnerID(); 
+        string myID = player.GetIdentity().GetId(); 
+        int currentLvl = m_TargetFlag.GetTerritoryLevel();
+        
+        if (m_LevelText) 
+        {
+            m_LevelText.SetText("Уровень: " + currentLvl);
+        }
+        
+        if (m_LimitsInfo) 
+        {
+            UpdateLimits(currentLvl);
+        }
+        
         bool isOwnedByVar = m_TargetFlag.HasOwner(); 
-        if (isOwnedByVar && ownerID == "") { m_OwnerText.SetText("Владелец: [Загрузка...]"); m_BtnAdd.Show(false); m_BtnKick.Show(false); m_BtnDelete.Show(false); m_BtnUpgrade.Show(false); return; }
-        bool amIOwner = (ownerID == myID); bool isFree = (!isOwnedByVar);
-        if (isFree) { m_OwnerText.SetText("Владелец: Нет (Свободно)"); m_BtnAdd.Show(true); m_BtnAdd.SetText("ЗАХВАТИТЬ"); m_BtnAdd.SetColor(0xFF00FF00); m_BtnKick.Show(false); m_BtnDelete.Show(false); m_InputName.Show(false); m_MembersList.Show(false); m_NearbyList.Show(false); if (m_BtnUpgrade) m_BtnUpgrade.Show(false); if (m_UpgradeInfo) m_UpgradeInfo.SetText(""); if (m_LimitsInfo) m_LimitsInfo.SetText("Захватите территорию,\nчтобы увидеть лимиты."); }
-        else if (amIOwner) { m_OwnerText.SetText("Владелец: ВЫ"); m_BtnAdd.Show(true); m_BtnAdd.SetText("ДОБАВИТЬ"); m_BtnAdd.SetColor(0xFFFFFFFF); m_BtnKick.Show(true); m_BtnDelete.Show(true); m_InputName.Show(true); m_MembersList.Show(true); m_NearbyList.Show(true); if (m_BtnUpgrade) { m_BtnUpgrade.Show(true); UpdateUpgradeCost(currentLvl); } }
-        else { m_OwnerText.SetText("Владелец: " + ownerID); m_BtnAdd.Show(false); m_BtnKick.Show(false); m_BtnDelete.Show(false); m_InputName.Show(false); m_MembersList.Show(true); m_NearbyList.Show(false); if (m_BtnUpgrade) m_BtnUpgrade.Show(false); if (m_UpgradeInfo) m_UpgradeInfo.SetText("Доступ запрещен"); }
-        if (m_TargetFlag.m_Members) { m_MembersList.ClearItems(); for (int i = 0; i < m_TargetFlag.m_Members.Count(); i++) m_MembersList.AddItem(m_TargetFlag.m_Members.Get(i), NULL, 0); }
+        
+        // If owned but owner ID not yet synced
+        if (isOwnedByVar && ownerID == "") 
+        { 
+            m_OwnerText.SetText("Владелец: [Загрузка...]"); 
+            m_BtnAdd.Show(false); 
+            m_BtnKick.Show(false); 
+            m_BtnDelete.Show(false); 
+            m_BtnUpgrade.Show(false); 
+            return; 
+        }
+        
+        bool amIOwner = (ownerID == myID); 
+        bool isFree = (!isOwnedByVar);
+        
+        // Territory is free - show claim option
+        if (isFree) 
+        { 
+            m_OwnerText.SetText("Владелец: Нет (Свободно)"); 
+            m_BtnAdd.Show(true); 
+            m_BtnAdd.SetText("ЗАХВАТИТЬ"); 
+            m_BtnAdd.SetColor(0xFF00FF00); 
+            m_BtnKick.Show(false); 
+            m_BtnDelete.Show(false); 
+            m_InputName.Show(false); 
+            m_MembersList.Show(false); 
+            m_NearbyList.Show(false); 
+            
+            if (m_BtnUpgrade) 
+            {
+                m_BtnUpgrade.Show(false); 
+            }
+            
+            if (m_UpgradeInfo) 
+            {
+                m_UpgradeInfo.SetText(""); 
+            }
+            
+            if (m_LimitsInfo) 
+            {
+                m_LimitsInfo.SetText("Захватите территорию,\nчтобы увидеть лимиты."); 
+            }
+        }
+        // I am the owner - show full management
+        else if (amIOwner) 
+        { 
+            m_OwnerText.SetText("Владелец: ВЫ"); 
+            m_BtnAdd.Show(true); 
+            m_BtnAdd.SetText("ДОБАВИТЬ"); 
+            m_BtnAdd.SetColor(0xFFFFFFFF); 
+            m_BtnKick.Show(true); 
+            m_BtnDelete.Show(true); 
+            m_InputName.Show(true); 
+            m_MembersList.Show(true); 
+            m_NearbyList.Show(true); 
+            
+            if (m_BtnUpgrade) 
+            { 
+                m_BtnUpgrade.Show(true); 
+                UpdateUpgradeCost(currentLvl); 
+            } 
+        }
+        // Someone else owns it - limited view
+        else 
+        { 
+            m_OwnerText.SetText("Владелец: " + ownerID); 
+            m_BtnAdd.Show(false); 
+            m_BtnKick.Show(false); 
+            m_BtnDelete.Show(false); 
+            m_InputName.Show(false); 
+            m_MembersList.Show(true); 
+            m_NearbyList.Show(false); 
+            
+            if (m_BtnUpgrade) 
+            {
+                m_BtnUpgrade.Show(false); 
+            }
+            
+            if (m_UpgradeInfo) 
+            {
+                m_UpgradeInfo.SetText("Доступ запрещен"); 
+            }
+        }
+        
+        // Update members list
+        if (m_TargetFlag.m_Members) 
+        { 
+            m_MembersList.ClearItems(); 
+            for (int i = 0; i < m_TargetFlag.m_Members.Count(); i++) 
+            {
+                m_MembersList.AddItem(m_TargetFlag.m_Members.Get(i), NULL, 0); 
+            }
+        }
     }
 
     void UpdateLimits(int currentLvl)
@@ -48,8 +165,8 @@ class DP_ManagementMenu : UIScriptedMenu
         array<Object> objects = new array<Object>; array<CargoBase> proxyCargos = new array<CargoBase>;
         
         // --- ИСПРАВЛЕНИЕ: ПРИНУДИТЕЛЬНЫЙ РАДИУС ---
-        // Если конфиг уровня вернул 0 (баг конфига), ставим 50.0 вручную.
-        float searchRadius = 50.0;
+        // Если конфиг уровня вернул 0 (баг конфига), используем дефолтное значение
+        float searchRadius = DP_TerritoryConstants.DEFAULT_RADIUS;
         if (lvlDef.Radius > 0) searchRadius = lvlDef.Radius;
         // ------------------------------------------
 
@@ -178,27 +295,169 @@ class DP_ManagementMenu : UIScriptedMenu
         return count; 
     }
 
-    override void OnShow() { super.OnShow(); GetGame().GetUIManager().ShowCursor(true); GetGame().GetInput().ChangeGameFocus(1); GetGame().GetMission().PlayerControlDisable(INPUT_EXCLUDE_INVENTORY); SetFocus(layoutRoot); if (m_InputName) m_InputName.SetText(""); }
-    override void OnHide() { super.OnHide(); GetGame().GetUIManager().ShowCursor(false); GetGame().GetInput().ResetGameFocus(); GetGame().GetMission().PlayerControlEnable(true); }
+    override void OnShow() 
+    { 
+        super.OnShow(); 
+        GetGame().GetUIManager().ShowCursor(true); 
+        GetGame().GetInput().ChangeGameFocus(1); 
+        GetGame().GetMission().PlayerControlDisable(INPUT_EXCLUDE_INVENTORY); 
+        SetFocus(layoutRoot); 
+        
+        if (m_InputName) 
+        {
+            m_InputName.SetText(""); 
+        }
+    }
+    
+    override void OnHide() 
+    { 
+        super.OnHide(); 
+        GetGame().GetUIManager().ShowCursor(false); 
+        GetGame().GetInput().ResetGameFocus(); 
+        GetGame().GetMission().PlayerControlEnable(true); 
+    }
     
     override bool OnClick(Widget w, int x, int y, int button)
     {
-        if (w == m_BtnClose) { Close(); return true; }
-        if (w == m_BtnDelete && m_TargetFlag) { m_TargetFlag.RequestDelete(); Close(); return true; }
-        if (w == m_BtnUpgrade && m_TargetFlag) { m_TargetFlag.RequestUpgrade(); return true; }
+        if (w == m_BtnClose) 
+        { 
+            Close(); 
+            return true; 
+        }
+        
+        if (w == m_BtnDelete && m_TargetFlag) 
+        { 
+            m_TargetFlag.RequestDelete(); 
+            Close(); 
+            return true; 
+        }
+        
+        if (w == m_BtnUpgrade && m_TargetFlag) 
+        { 
+            m_TargetFlag.RequestUpgrade(); 
+            return true; 
+        }
+        
         if (w == m_BtnAdd)
         {
             string ownerID = m_TargetFlag.GetOwnerID();
-            if (ownerID == "") { GetGame().RPCSingleParam(m_TargetFlag, TerritoryFlag.RPC_CLAIM_TERRITORY, null, true); return true; }
-            string idToAdd = m_InputName.GetText(); int row = m_NearbyList.GetSelectedRow();
-            if (row != -1) { Param1<string> pData; m_NearbyList.GetItemData(row, 0, pData); if (pData) idToAdd = pData.param1; }
-            if (idToAdd != "") { m_TargetFlag.RequestAddMember(idToAdd); m_InputName.SetText(""); } return true;
+            if (ownerID == "") 
+            { 
+                GetGame().RPCSingleParam(m_TargetFlag, TerritoryFlag.RPC_CLAIM_TERRITORY, null, true); 
+                return true; 
+            }
+            
+            string idToAdd = m_InputName.GetText(); 
+            int row = m_NearbyList.GetSelectedRow();
+            if (row != -1) 
+            { 
+                Param1<string> pData; 
+                m_NearbyList.GetItemData(row, 0, pData); 
+                if (pData) 
+                {
+                    idToAdd = pData.param1; 
+                }
+            }
+            
+            if (idToAdd != "") 
+            {
+                // Client-side validation for immediate feedback
+                if (!m_TargetFlag.IsValidPlayerId(idToAdd))
+                {
+                    PlayerBase localPlayer = PlayerBase.Cast(GetGame().GetPlayer());
+                    if (localPlayer)
+                    {
+                        localPlayer.MessageImportant("⛔ Недопустимый формат ID игрока!");
+                    }
+                    return true;
+                }
+                
+                m_TargetFlag.RequestAddMember(idToAdd); 
+                m_InputName.SetText(""); 
+            } 
+            return true;
         }
-        if (w == m_BtnKick) { int kRow = m_MembersList.GetSelectedRow(); if (kRow != -1) { string idToRemove; m_MembersList.GetItemText(kRow, 0, idToRemove); m_TargetFlag.RequestRemoveMember(idToRemove); } return true; }
+        
+        if (w == m_BtnKick) 
+        { 
+            int kRow = m_MembersList.GetSelectedRow(); 
+            if (kRow != -1) 
+            { 
+                string idToRemove; 
+                m_MembersList.GetItemText(kRow, 0, idToRemove); 
+                m_TargetFlag.RequestRemoveMember(idToRemove); 
+            } 
+            return true; 
+        }
+        
         return false;
     }
     
-    void UpdateNearbyPlayers() { if (!m_NearbyList || !m_NearbyList.IsVisible()) return; m_NearbyList.ClearItems(); array<Object> objects = new array<Object>; array<CargoBase> proxyCargos = new array<CargoBase>; float currentR = m_TargetFlag.GetCurrentRadius(); GetGame().GetObjectsAtPosition(GetGame().GetPlayer().GetPosition(), currentR, objects, proxyCargos); for (int i = 0; i < objects.Count(); i++) { PlayerBase pb = PlayerBase.Cast(objects.Get(i)); if (pb && pb.GetIdentity()) { string pID = pb.GetIdentity().GetId(); if (pID == GetGame().GetPlayer().GetIdentity().GetId()) continue; m_NearbyList.AddItem(pb.GetIdentity().GetName(), new Param1<string>(pID), 0); } } }
-    override void Update(float timeslice) { super.Update(timeslice); m_UpdateTimer += timeslice; if (m_UpdateTimer > 0.5) { UpdateInfo(); UpdateNearbyPlayers(); m_UpdateTimer = 0; } Input input = GetGame().GetInput(); if (input.LocalPress("UAUIBack", false)) Close(); }
-    override bool OnKeyDown(Widget w, int x, int y, int key) { super.OnKeyDown(w, x, y, key); if (key == KeyCode.KC_ESCAPE) { Close(); return true; } return false; }
+    void UpdateNearbyPlayers() 
+    { 
+        if (!m_NearbyList || !m_NearbyList.IsVisible()) return;
+        if (!m_TargetFlag)
+        {
+            Print("[DP_Territory ERROR] m_TargetFlag is null in UpdateNearbyPlayers");
+            return;
+        }
+        
+        PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+        if (!player || !player.GetIdentity())
+        {
+            return; // Can't update if player is not valid
+        }
+        
+        m_NearbyList.ClearItems(); 
+        array<Object> objects = new array<Object>; 
+        array<CargoBase> proxyCargos = new array<CargoBase>; 
+        float currentR = m_TargetFlag.GetCurrentRadius(); 
+        
+        GetGame().GetObjectsAtPosition(player.GetPosition(), currentR, objects, proxyCargos); 
+        
+        string myID = player.GetIdentity().GetId();
+        for (int i = 0; i < objects.Count(); i++) 
+        { 
+            PlayerBase pb = PlayerBase.Cast(objects.Get(i)); 
+            if (pb && pb.GetIdentity()) 
+            { 
+                string pID = pb.GetIdentity().GetId(); 
+                if (pID == myID) 
+                {
+                    continue; // Skip self
+                }
+                
+                m_NearbyList.AddItem(pb.GetIdentity().GetName(), new Param1<string>(pID), 0); 
+            } 
+        } 
+    }
+    override void Update(float timeslice) 
+    { 
+        super.Update(timeslice); 
+        m_UpdateTimer += timeslice; 
+        if (m_UpdateTimer > DP_TerritoryConstants.UPDATE_INTERVAL) 
+        { 
+            UpdateInfo(); 
+            UpdateNearbyPlayers(); 
+            m_UpdateTimer = 0; 
+        } 
+        
+        Input input = GetGame().GetInput(); 
+        if (input.LocalPress("UAUIBack", false)) 
+        {
+            Close(); 
+        }
+    }
+    override bool OnKeyDown(Widget w, int x, int y, int key) 
+    { 
+        super.OnKeyDown(w, x, y, key); 
+        
+        if (key == KeyCode.KC_ESCAPE) 
+        { 
+            Close(); 
+            return true; 
+        } 
+        
+        return false; 
+    }
 }

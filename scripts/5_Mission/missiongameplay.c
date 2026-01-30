@@ -5,7 +5,7 @@ modded class MissionGameplay
         UIScriptedMenu menu = super.CreateScriptedMenu(id);
         if (menu) return menu;
         
-        if (id == 777778)
+        if (id == DP_TerritoryConstants.MENU_ID_TERRITORY_MANAGEMENT)
         {
             menu = new DP_ManagementMenu;
             return menu;

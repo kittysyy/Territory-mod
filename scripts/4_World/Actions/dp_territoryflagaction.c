@@ -31,6 +31,6 @@ class DP_TerritoryFlagAction: ActionInteractBase
 
         flag.RequestSyncDataAll(); 
         DP_TerritoryManager.TM_GetInstance().m_ClientPendingTarget = flag;
-        GetGame().GetUIManager().EnterScriptedMenu(777778, null);
+        GetGame().GetUIManager().EnterScriptedMenu(DP_TerritoryConstants.MENU_ID_TERRITORY_MANAGEMENT, null);
     }
 }

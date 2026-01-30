@@ -131,22 +131,49 @@ class DP_TerritoryManager
 
     bool TM_RegisterOwner_Unique(string ownerId, Object flagObj)
     {
-        if (!ownerId || !flagObj) return false;
+        if (!ownerId || ownerId == "" || !flagObj) 
+        {
+            Print("[DP_Territory ERROR] Invalid parameters for TM_RegisterOwner_Unique");
+            return false;
+        }
+        
         TM_UnregisterByOwnerId(ownerId);
         TM_TerritoryOwnership to = new TM_TerritoryOwnership();
         to.ownerId = ownerId;
         to.flagObj = flagObj;
         m_Ownerships.Insert(to);
+        
+        Print(string.Format("[DP_Territory] Registered territory for owner %1", ownerId));
         return true;
     }
 
     void TM_UnregisterByOwnerId(string ownerId)
     {
-        if (!ownerId) return;
+        if (!ownerId || ownerId == "") 
+        {
+            Print("[DP_Territory WARNING] Empty ownerId in TM_UnregisterByOwnerId");
+            return;
+        }
+        
+        int removedCount = 0;
         for (int i = m_Ownerships.Count() - 1; i >= 0; i--)
         {
             TM_TerritoryOwnership to = m_Ownerships.Get(i);
-            if (to && to.ownerId == ownerId) m_Ownerships.RemoveOrdered(i);
+            if (to && to.ownerId == ownerId) 
+            {
+                m_Ownerships.RemoveOrdered(i);
+                removedCount++;
+            }
+        }
+        
+        // Always log the result for debugging
+        if (removedCount > 0)
+        {
+            Print(string.Format("[DP_Territory] Unregistered %1 territory(ies) for owner %2", removedCount, ownerId));
+        }
+        else
+        {
+            Print(string.Format("[DP_Territory] No territories found for owner %1", ownerId));
         }
     }
     
