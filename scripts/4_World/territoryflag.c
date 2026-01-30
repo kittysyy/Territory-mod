@@ -109,19 +109,13 @@ modded class TerritoryFlag
         // Player IDs should be reasonable length (typically SteamID64 or similar)
         if (id.Length() < 3 || id.Length() > 64) return false;
         
-        // Basic check for invalid characters that might cause issues
-        // Allow alphanumeric, dash, and underscore
+        // Allowed characters for player IDs
+        string allowedChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+        
         for (int i = 0; i < id.Length(); i++)
         {
-            string char = id.Get(i);
-            int charCode = char.ToAscii(0);
-            bool isNumber = (charCode >= 48 && charCode <= 57); // 0-9
-            bool isUpperLetter = (charCode >= 65 && charCode <= 90); // A-Z
-            bool isLowerLetter = (charCode >= 97 && charCode <= 122); // a-z
-            bool isDash = (charCode == 45); // -
-            bool isUnderscore = (charCode == 95); // _
-            
-            if (!isNumber && !isUpperLetter && !isLowerLetter && !isDash && !isUnderscore)
+            string c = id.Get(i);
+            if (allowedChars.IndexOf(c) == -1)
             {
                 return false;
             }
